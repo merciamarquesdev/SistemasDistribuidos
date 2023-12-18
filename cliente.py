@@ -1,16 +1,26 @@
-import xmlrpc.client
+import http.client
 import json
 
-banco = input("Digite o Banco: \n")
+banco = input("Insira o nome do Banco: \n")
 
-with open('bancos\\'+banco+'.json') as arquivo:
+with open(f'bancos\\{banco}.json') as arquivo:
     contas = json.load(arquivo)
     porta = contas["porta"]
-    with xmlrpc.client.ServerProxy("http://localhost:"+str(porta)+"/RPC2") as s:
-        while True:
-            contaA = input("Digite a sua Conta: \n")
-            if contaA == 'sair':
-                exit()
-            contaB = input("Digite a Conta para a qual irá Transferir: \n")
-            moedas = int(input("Digite as Moedas: \n"))
-            print(s.transferencia(contaA, contaB, moedas))
+
+while True:
+    conta1 = input("Insira a conta que transferirá: \n")
+    if conta1 == 'sair':
+        exit()
+    conta2 = input("Digite a conta que receberá: \n")
+    valor = int(input("Digite o valor da transferência: \n"))
+
+    with http.client.HTTPConnection(f"localhost:{porta}") as conn:
+        payload = {
+            "conta1": conta1,
+            "conta2": conta2,
+            "valor": valor
+        }
+        conn.request('POST', '/transferencia', json.dumps(payload), headers={'Content-type': 'application/json'})
+        response = conn.getresponse()
+        result = response.read().decode()
+        print(result)
