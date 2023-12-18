@@ -1,20 +1,29 @@
-import subprocess
+import http.client
 import time
+import threading
+import json
 
-bancos = 2
-clientes = 2
+def start_server(input_file, output_file):
+    with open(input_file, "rb") as infile, open(output_file, "w+") as outfile:
+        conn = http.client.HTTPConnection('localhost', 8000)  # o servidor está na porta 8000
+        conn.request('POST', '/', body=infile.read(), headers={'Content-type': 'application/octet-stream'})
+        response = conn.getresponse()
+        outfile.write(response.read().decode())
 
-for i in range(bancos):
-    with open("input/servidor"+str(i+1)+".txt", "rb") as input_file:
-        with open("output/servidor"+str(i+1)+".txt", "w+") as output_file:
-            S = subprocess.Popen(['python3', 'banco.py'], stdout=output_file, stderr=output_file, stdin=input_file)
-            time.sleep(2)
+def start_client(input_file, output_file):
+    with open(input_file, "rb") as infile, open(output_file, "w+") as outfile:
+        conn = http.client.HTTPConnection('localhost', 8000)  # o servidor está na porta 8000
+        conn.request('POST', '/', body=infile.read(), headers={'Content-type': 'application/octet-stream'})
+        response = conn.getresponse()
+        outfile.write(response.read().decode())
 
-for i in range(clientes):
-    with open("input/cliente"+str(i+1)+".txt", "rb") as input_file:
-        with open("output/cliente"+str(i+1)+".txt", "w+") as output_file:
-            C = subprocess.Popen(['python3', 'cliente.py'], stdin=input_file, stderr=output_file, stdout=output_file)
+for i in range(2):
+    threading.Thread(target=start_server, args=(f"input/servidor{i+1}.txt", f"output/servidor{i+1}.txt")).start()
+    time.sleep(2)
+
+for i in range(2):
+    threading.Thread(target=start_client, args=(f"input/cliente{i+1}.txt", f"output/cliente{i+1}.txt")).start()
 
 time.sleep(5)
 
-print("Fim da Simulacao")
+print("Simulação finalizada!")
