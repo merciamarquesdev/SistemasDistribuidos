@@ -1,66 +1,80 @@
-from xmlrpc.server import SimpleXMLRPCServer
-from xmlrpc.server import SimpleXMLRPCRequestHandler
-import xmlrpc.client
-
-import os
+import http.server
+import http.client
 import json
 import random
 
-nomeBanco = input("Digite o nome do Banco: \n")
-caminhoBanco = 'bancos\\'+nomeBanco+'.json'
-if os.path.isfile(caminhoBanco):
+class RequestHandler(http.server.BaseHTTPRequestHandler):
+    def do_POST(self):
+        content_length = int(self.headers['Content-Length'])
+        post_data = self.rfile.read(content_length).decode('utf-8')
+        data = json.loads(post_data)
+
+        if self.path == '/deposito':
+            response = banco.deposito(data['conta'], data['valor'])
+        elif self.path == '/transferencia':
+            response = banco.transferencia(data['conta1'], data['conta2'], data['valor'])
+        else:
+            response = 'Endpoint inválido!'
+
+        self.send_response(200)
+        self.send_header('Content-type', 'text/plain')
+        self.end_headers()
+        self.wfile.write(response.encode())
+
+nome_banco = input("Insira o nome do Banco: \n")
+caminho_banco = f'bancos\\{nome_banco}.json'
+
+if os.path.isfile(caminho_banco):
     porta = random.randint(8000, 8900)
     contas = {"porta": porta}
 else:
-    with open(caminhoBanco, 'r+') as arquivo:
+    with open(caminho_banco, 'r+') as arquivo:
         contas = json.load(arquivo)
         porta = contas["porta"]
 
-class RequestHandler(SimpleXMLRPCRequestHandler):
-    rpc_paths = ('/RPC2')
-
-class Banco():
+class Banco:
     def __init__(self):
         self.contas = contas
         self.salvar()
+
     def salvar(self):
-        with open(caminhoBanco, 'w') as arquivo:
+        with open(caminho_banco, 'w') as arquivo:
             json.dump(self.contas, arquivo)
-    def deposito(self, conta, moedas):
+
+    def deposito(self, conta, valor):
         if conta in self.contas:
-            self.contas[conta] += moedas
+            self.contas[conta] += valor
         else:
-            self.contas[conta] = moedas
+            self.contas[conta] = valor
         self.salvar()
-        return "Operacao Concluída"
-    def transferencia(self, contaA, contaB, moedas):
-        if contaA not in self.contas or self.contas[contaA] < moedas:
-            return "Operacao Invalida"
-        if contaB not in self.contas:
+        return "Transação finalizada com sucesso!"
+
+    def transferencia(self, conta1, conta2, valor):
+        if conta1 not in self.contas or self.contas[conta1] < valor:
+            return "Erro. Esta transação é inválida."
+        if conta2 not in self.contas:
             bancos = os.listdir('./bancos')
             for i in range(0, len(bancos)):
-                with open('./bancos/'+bancos[i]) as B:
-                    contas = json.load(B)
-                    if contaB in contas:
-                        with xmlrpc.client.ServerProxy("http://localhost:"+str(contas["porta"])+"/RPC2") as b:
-                            self.contas[contaA] -= moedas
-                            b.deposito(contaB, moedas)
+                with open(f'./bancos/{bancos[i]}') as b:
+                    contas = json.load(b)
+                    if conta2 in contas:
+                        with http.client.HTTPConnection(f"localhost:{contas['porta']}") as conn:
+                            enviar_requisicao(conn, '/deposito', {"conta": conta2, "valor": valor})
+                            self.contas[conta1] -= valor
                             self.salvar()
-                            return "Operacao Concluída"
-            return "Operacao Invalida"
-        self.contas[contaA] -= moedas
-        self.contas[contaB] += moedas
+                            return "Transação finalizada com sucesso!"
+            return "Erro. Esta transação é inválida."
+        self.contas[conta1] -= valor
+        self.contas[conta2] += valor
         self.salvar()
-        return "Operacao Concluída"
+        return "Transação finalizada com sucesso!"
 
-with SimpleXMLRPCServer(('localhost', porta), requestHandler=RequestHandler) as server:
-    server.register_introspection_functions()
-    NovoBanco = Banco()
-    while True:
-        conta = input("Digite Conta")
-        if conta == 'sair':
-            break
-        moedas = int(input("Digite Moedas"))
-        NovoBanco.deposito(conta, moedas)
-    server.register_instance(NovoBanco)
+def enviar_requisicao(conn, endpoint, data=None):
+    headers = {'Content-type': 'application/json'}
+    conn.request('POST', endpoint, json.dumps(data) if data else None, headers)
+    response = conn.getresponse()
+    return response.read().decode()
+
+with http.server.HTTPServer(('localhost', porta), RequestHandler) as server:
+    banco = Banco()
     server.serve_forever()
