@@ -14,7 +14,7 @@ def conectarBanco():
             return http.client.HTTPConnection(f"{host}:{porta}")
     except FileNotFoundError:
         print(f"Arquivo para o banco {banco} não encontrado. Tente novamente.")
-        return conectar_banco()
+        return conectarBanco()
 
 def enviarRequisicao(conn, endpoint, data=None):
     headers = {'Content-type': 'application/json'}
@@ -22,24 +22,24 @@ def enviarRequisicao(conn, endpoint, data=None):
     response = conn.getresponse()
     return response.read().decode()
 
-def cadastrarConta(s):
+def cadastrarConta(conn):
     conta = (input("Insira a conta: "))
     return enviarRequisicao(conn, '/cadastro', {'conta': conta})
 
-def fazerDeposito(s):
+def fazerDeposito(conn):
     conta = input("Insira a conta: ")
     valor = int(input("Insira o valor do depósito: "))
     return enviarRequisicao(conn, '/deposito', {'conta': conta, 'valor': valor})
 
-def fazerTransferencia(s):
+def fazerTransferencia(conn):
     conta1 = input("Insira a conta que transferirá: ")
     conta2 = input("Insira a conta que receberá: ")
     valor = int(input("Insira o valor da transferência: "))
-    return enviar_requisicao(conn, '/transferencia', {'conta1': contaA, 'conta2': contaB, 'valor': valor})
+    return enviarRequisicao(conn, '/transferencia', {'conta1': conta1, 'conta2': conta2, 'valor': valor})
 
-def fazerConsulta(s):
+def fazerConsulta(conn):
     conta = (input("Insira a conta: "))
-    return enviar_requisicao(conn, '/consulta', {'conta': conta})
+    return enviarRequisicao(conn, '/consulta', {'conta': conta})
 
 
 def main():

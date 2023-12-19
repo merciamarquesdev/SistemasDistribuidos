@@ -11,7 +11,7 @@ class Banco:
         self.nome = nome
         self.porta = porta
         self.contas = contas
-        self.tempos_operacoes = []
+        self.temposOperacoes = []
         self.salvar()
 
     def salvar(self):
@@ -47,7 +47,7 @@ class Banco:
             return "O valor do depósito deve ser maior que zero."
         elif conta1 not in self.contas:
             return f"Esta conta não existe!"
-        elif self.contas[contaA][0] < valor:
+        elif self.contas[conta1][0] < valor:
             return f"Saldo insuficiente."
         elif conta2 in self.contas: 
             self.contas[conta1][0] -= valor
@@ -99,31 +99,32 @@ class Banco:
             self.contas[transacao["Origem"][2]][1][transacao["ID"]] = transacao
         self.salvar_arquivo()
         return "Done"
-
-    def calcular_tempo_medio(self):
-        if not self.tempos_operacoes:
+    
+    def calcularTempoMedio(self):
+        if not self.temposOperacoes:
             return 0  # Nenhuma operação registrada
-        return sum(self.tempos_operacoes) / len(self.tempos_operacoes)
+        return sum(self.temposOperacoes) / len(self.temposOperacoes)
 
-    def calcular_throughput(self, tempo_total):
-        if not self.tempos_operacoes:
-            return 0  # Nenhuma operação registrada
-        return len(self.tempos_operacoes) / tempo_total
+    def calcularThroughput(self, tempoTotal):
+        if not self.temposOperacoes:
+            return 0
+        return len(self.temposOperacoes) / tempoTotal
+
 
 def conectarBanco():
     banco = input("Insira o banco desejado (Para finalizar a sessão, insira 'sair'): \n")
     if banco.lower() == "sair":
         return None
-
     try:
-        with open(f'./bancos/{banco}.json') as arquivo:
+        with open(f'./bancos/{banco}.json','a+') as arquivo:
+            print('cu')
             contas = json.load(arquivo)
-            host = "localhost"
-            porta = contas["porta"][0]
-            return http.client.HTTPConnection(f"{host}:{porta}")
+            print('boo')
+            return Banco(banco, contas["porta"][0], contas)
     except FileNotFoundError:
         print(f"Arquivo para o banco {banco} não encontrado. Tente novamente.")
-        return conectar_banco()
+        return conectarBanco()
+   
 
 class RequestHandler(http.server.BaseHTTPRequestHandler):
     def doPOST(self):
@@ -142,7 +143,7 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
         elif self.path == '/deposito':
             response = banco.deposito(data['conta'], data['valor'])
         elif self.path == '/transferencia':
-            response = banco.transferencia(data['contaA'], data['contaB'], data['valor'])
+            response = banco.transferencia(data['conta1'], data['conta2'], data['valor'])
         elif self.path == '/resposta':
             response = banco.resposta(data)
         else:
@@ -153,17 +154,24 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(response.encode())
 
-def iniciar():
+
+def startBank(porta):
     with http.server.HTTPServer(('localhost', porta), RequestHandler) as server:
         server.serve_forever()
+
+def startTransactions():
+    new_loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(new_loop)
+    new_loop.run_until_complete(loop())
 
 async def loop():
     while True:
         await pendingTransactions(banco)
         await asyncio.sleep(2)
+            
 
-async def transacoes(banco):
-    print("> Transações <")
+async def pendingTransactions(banco):
+    print("> Pending Transactions <")
     for conta in banco.contas:
         for transacao in banco.contas[conta][1]:
             transacao = banco.contas[conta][1][transacao]
@@ -180,32 +188,35 @@ async def transacoes(banco):
                 except Exception as e:
                     print("Resposta falhou! Erro: {}".format(str(e)))
 
+
 def enviarRequisicao(conn, endpoint, data=None):
     headers = {'Content-type': 'application/json'}
     conn.request('POST', endpoint, json.dumps(data) if data else None, headers)
     response = conn.getresponse()
     return response.read().decode()
 
+
+
 if __name__ == "__main__":
     banco = conectarBanco()
     if banco is not None:
-        threading.Thread(target=iniciar).start()
+        threading.Thread(target=startBank).start()
         threading.Thread(target=loop).start()
         
     def main():
         while True:
-            start_time = time.time() 
-            end_time = time.time()
-            tempo_operacao = end_time - start_time
-            banco.tempos_operacoes.append(tempo_operacao)  
+            startTime = time.time() 
+            endTime = time.time()
+            tempoOperacao = endTime - startTime
+            banco.tempos_operacoes.append(tempoOperacao)  
             
-    def start():
-        start_time_total = time.time() 
+    def start(porta):
+        startTimeTotal = time.time() 
         with http.server.HTTPServer(('localhost', porta), RequestHandler) as server:
-        end_time_total = time.time()  
-        tempo_total = end_time_total - start_time_total
-        tempo_medio = banco.calcular_tempo_medio()
-        throughput = banco.calcular_throughput(tempo_total)
+            endTimeTotal = time.time()  
+            tempoTotal = endTimeTotal - startTimeTotal
+            tempoMedio = banco.calcularTempoMedio()
+            throughput = banco.calcularThroughput(tempoTotal)
 
-        print(f"Tempo Médio por Operação: {tempo_medio} segundos")
+        print(f"Tempo Médio por Operação: {tempoMedio} segundos")
         print(f"Throughput: {throughput} operações por segundo")
