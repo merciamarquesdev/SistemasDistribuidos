@@ -4,6 +4,7 @@ import http.server
 import http.client
 import asyncio
 import threading
+import time
 
 class Banco:
     def __init__(self, nome, porta, contas):
