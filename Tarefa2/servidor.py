@@ -10,6 +10,7 @@ class Banco:
         self.nome = nome
         self.porta = porta
         self.contas = contas
+        self.tempos_operacoes = []
         self.salvar()
 
     def salvar(self):
@@ -98,6 +99,16 @@ class Banco:
         self.salvar_arquivo()
         return "Done"
 
+    def calcular_tempo_medio(self):
+        if not self.tempos_operacoes:
+            return 0  # Nenhuma operação registrada
+        return sum(self.tempos_operacoes) / len(self.tempos_operacoes)
+
+    def calcular_throughput(self, tempo_total):
+        if not self.tempos_operacoes:
+            return 0  # Nenhuma operação registrada
+        return len(self.tempos_operacoes) / tempo_total
+
 def conectarBanco():
     banco = input("Insira o banco desejado (Para finalizar a sessão, insira 'sair'): \n")
     if banco.lower() == "sair":
@@ -179,3 +190,21 @@ if __name__ == "__main__":
     if banco is not None:
         threading.Thread(target=iniciar).start()
         threading.Thread(target=loop).start()
+        
+    def main():
+        while True:
+            start_time = time.time() 
+            end_time = time.time()
+            tempo_operacao = end_time - start_time
+            banco.tempos_operacoes.append(tempo_operacao)  
+            
+    def start():
+        start_time_total = time.time() 
+        with http.server.HTTPServer(('localhost', porta), RequestHandler) as server:
+        end_time_total = time.time()  
+        tempo_total = end_time_total - start_time_total
+        tempo_medio = banco.calcular_tempo_medio()
+        throughput = banco.calcular_throughput(tempo_total)
+
+        print(f"Tempo Médio por Operação: {tempo_medio} segundos")
+        print(f"Throughput: {throughput} operações por segundo")
