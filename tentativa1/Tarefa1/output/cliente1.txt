@@ -1,4 +1,0 @@
-Digite o Banco: 
-Digite a sua Conta: 
-Digite a Conta para a qual irá Transferir: 
-Digite as Moedas: 

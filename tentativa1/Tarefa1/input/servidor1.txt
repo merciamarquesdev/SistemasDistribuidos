@@ -1,4 +1,0 @@
-banco1
-conta1
-200
-sair
