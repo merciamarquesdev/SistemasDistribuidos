@@ -17,7 +17,7 @@ class Cliente:
                 sucesso = self.banco.sacar(conta_origem, valor)
                 if sucesso:
                     self.banco.depositar(conta_destino, valor)
-                    print(f"Transferência local: {self.nome} transferiu {valor} de {conta_origem} para {conta_destino}")
+                    print(f"Transferência local: {self.nome} transferiu R$ {valor},00 de {conta_origem} para {conta_destino}")
             else:
                 # Transferência entre bancos
                 valor_sacado = self.banco.sacar(conta_origem, valor)
@@ -25,4 +25,4 @@ class Cliente:
                     endereco_destino = f"localhost:{int(conta_destino.split('_')[1])}"
                     proxy_destino = xmlrpc.client.ServerProxy(f"http://{endereco_destino}")
                     proxy_destino.depositar(conta_destino, valor)
-                    print(f"Transferência entre bancos: {self.nome} transferiu {valor} de {conta_origem} para {conta_destino}")
+                    print(f"Transferência entre bancos: {self.nome} transferiu R$ {valor},00 de {conta_origem} para {conta_destino}")

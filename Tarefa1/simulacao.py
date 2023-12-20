@@ -9,7 +9,7 @@ def gerar_transferencias(bancos, num_transferencias):
         destino_banco = random.choice(bancos)
         origem_conta = f"{origem_banco.nome}_Conta_{random.randint(0, len(origem_banco.contas) - 1)}"
         destino_conta = f"{destino_banco.nome}_Conta_{random.randint(0, len(destino_banco.contas) - 1)}"
-        valor = random.randint(2, 5)
+        valor = random.randint(50, 500)
         transferencias.append((origem_conta, destino_conta, valor))
     return transferencias
 
@@ -33,4 +33,4 @@ if __name__ == "__main__":
     for banco in bancos:
         print(f"\nEstado atual do banco {banco.nome}:")
         for conta in banco.obter_contas():
-            print(f"Conta {conta.numero}: Saldo = {conta.saldo}")
+            print(f"Conta {conta.numero}: Saldo = R$ {conta.saldo},00")

@@ -38,7 +38,7 @@ if __name__ == "__main__":
     for banco in bancos:
         print(f"\nEstado atual do banco {banco.nome}:")
         for conta in banco.obter_contas():
-            print(f"Conta {conta.numero}: Saldo = {conta.saldo}")
+            print(f"Conta {conta.numero}: Saldo = R$ {conta.saldo},00 ")
 
     tempo_total = tempo_final - tempo_inicial
     num_transferencias_total = sum(len(cliente.transferencias) for cliente in clientes)
